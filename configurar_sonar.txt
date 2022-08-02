@@ -1,0 +1,45 @@
+1-Associe o repositório do GitHub ao Sonar Cloud como projeto:
+    a:No GitHub vá em Settings/Applications/Terraform Cloud Configure
+    b:Select repositories
+    c:Selecione o repositório
+    d:Save
+2-No Sonar Cloud crie uma Organization
+    a:Create Organization
+    b:Escolha o repositório do projeto do GitHub
+    c:Em Set New Code Definition escolha a opção: Previus Version
+3-Ir para Administration/Analysis Method, e desligar o SonarCloud Automatic Analysis, pois iremos analisar o código via GitHub Applications
+4-Configurar o token do Sonar no GitHub Actions
+    a:Clicar em Follow the tutorial do GitHub Applications
+    b:Clicar em Settings/Secrets para abrir o GitHub Applications
+    c:New repository secret
+    d:Name --> SONAR_TOKEN
+    e:Value --> Copiar o valor gerado no Sonar Cloud
+    f:Add secret
+5-Clicar em continue no Sonar Cloud
+6-Clicar em Maven
+7-No Visual Studio Code, criar uma nova branch: feature/SonarCloud
+8-No arquivo pipeline.yml
+    a:Incluir o cache do Sonar antes do cache do Maven
+
+        - name: Cache SonarCloud packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+        
+    b:Incluir o Build e Analyze depois do build do Maven
+
+        - name: Build and analyze
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=PhilipsMonster_seara-de-jesus
+
+9-No arquivo pom.xml incluir o Sonar:
+
+        <properties>
+            <sonar.organization>philipsmonster</sonar.organization>
+            <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        </properties>
+

@@ -1,0 +1,112 @@
+1-Aguardar a criação da infraestrutura no GCP pelo procedimento (ambiente_nuvem_infraestrutura_gcp_java_postgres)
+2-Adicione as variáveis do Google Cloud Plattaform no GitHub Actions
+  a:Entre no repositório do projeto
+  b:Settings/Secrets/Actions
+  c:New Repository Secrets
+    ARTIFACT_REGISTRY
+      -Vá no Workespace do GCP
+      -ARTIFACT_REGISTRY
+      -projeto-back
+      -Copie o endereço do registry inteiro
+      -Em value cole o endereço copiado acima
+    GOOGLE_CREDENTIALS
+      -Vá para a pasta onde está o arquivo gcpkey.json
+      -Digite o comando: tr -d '\n' < /c/Source/seara-de-jesus/gcpkey.json
+      -Copie o conteúdo que está nos parênteses
+      -Volte para a variável GOOGLE_CREDENTIALS e cole o conteúdo copiado para o campo Value
+3-Edite a pipeline para receber as configurações que irão subir o build no registry do GCP
+  a:Vá para .github/workflows/pipeline.yml
+  b:Adicione o conteúdo abaixo, logo após as configurações do Heroku:
+      - name: Google Cloud Plataform Login
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: | 
+          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > key.json
+          cat key.json | docker login -u _json_key --password-stdin https://us-central1-docker.pkg.dev/
+      - name: Build Image & Push
+        env: 
+          ARTIFACT_REGISTRY: ${{ secrets.ARTIFACT_REGISTRY }}
+        run: | 
+          docker build -t ${{ secrets.ARTIFACT_REGISTRY }}/seara:latest .
+          docker push ${{ secrets.ARTIFACT_REGISTRY }}/seara:latest
+
+Obs. Utilizaremos o Github Actions para subir o build no Registry do GCP, via Branch hom, mas para fazer o deploy iremos utilizar o Terrafor via Branch Main
+
+4-Crie o arquivo providers.tf na raiz do repositório do projeto (estamos informando que iremos utilizar o GCP com o Cloud Run)
+
+  # Configura o Provider Google Cloud com o Projeto
+  terraform {
+    required_providers {
+      google = {
+        source = "hashicorp/google"
+        version = "4.27.0"
+      }
+    }
+  }
+
+  # Configura o Provider Google Cloud com o Projeto
+  provider "google" {
+
+    project = "searadev"
+    region  = "us-west1"
+    zone    = "us-west1-b"
+  }
+
+  provider "google-beta" {
+    project = "searadev"
+    region  = "us-west1"
+    zone    = "us-west1-b"
+  }
+
+5-Crie o arquivo gcp-main.tf na raiz do repositório do projeto
+  a:Vamos criar um container no Cloud Run a partir da build do registry
+  b:No Cloud Run vamos configurar a Serveless VPC que criamos anteriormente, para possibilitar a comunicação entre o backend e o banco ambiente_nuvem_infraestrutura_gcp_java_postgres
+  c:Vamos configurar para que o IAM não exija as credenciais para acessar o nosso backend
+
+    resource "google_cloud_run_service" "default" {
+    name     = "searadev-back"
+    location = "us-central1"
+
+    template {
+      spec {
+        containers {
+          image = "us-central1-docker.pkg.dev/seara-embu/searadev-back/seara:latest"
+        }
+      }
+
+      metadata {
+        annotations = {
+          "run.googleapis.com/vpc-access-connector" = "vpcconn"
+        }
+      }
+    }
+  }
+
+  data "google_iam_policy" "noauth" {
+    binding {
+      role = "roles/run.invoker"
+      members = [
+        "allUsers",
+      ]
+    }
+  }
+
+  resource "google_cloud_run_service_iam_policy" "noauth" {
+    location    = google_cloud_run_service.default.location
+    project     = google_cloud_run_service.default.project
+    service     = google_cloud_run_service.default.name
+
+    policy_data = data.google_iam_policy.noauth.policy_data
+  }
+
+6-Vamos commitar até a branch hom para subir a build no Registry do GCP
+7-Commitar o projeto até o main
+8-Voltar para a Workspace do Terraform e acompanhar a execução
+    a:Runs
+    c:Se o Plan não falhar, Aprovar o Apply e acompanhar
+    d:Concluir
+9-Acessar o GCP e acessar o projeto
+10-Vá em Cloud Run e verifique se a mesma foi criada
+11-Entre nela e copie a URL
+12-Cole a url no Postman e faça uma chamada para verificar se está tudo funcionando
+13-Seu serviço está deployado no GCP através do Cloud Run
