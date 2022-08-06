@@ -6,19 +6,24 @@
 2-No Sonar Cloud crie uma Organization
     a:Create Organization
     b:Escolha o repositório do projeto do GitHub
-    c:Em Set New Code Definition escolha a opção: Previus Version
-3-Ir para Administration/Analysis Method, e desligar o SonarCloud Automatic Analysis, pois iremos analisar o código via GitHub Applications
-4-Configurar o token do Sonar no GitHub Actions
-    a:Clicar em Follow the tutorial do GitHub Applications
-    b:Clicar em Settings/Secrets para abrir o GitHub Applications
-    c:New repository secret
-    d:Name --> SONAR_TOKEN
-    e:Value --> Copiar o valor gerado no Sonar Cloud
-    f:Add secret
-5-Clicar em continue no Sonar Cloud
-6-Clicar em Maven
-7-No Visual Studio Code, criar uma nova branch: feature/SonarCloud
-8-No arquivo pipeline.yml
+3-Em Administration/Set New Code Definition escolha a opção: Previus Version
+4-Em Administration/Analysis Method desligue o SonarCloud Automatic Analysis, pois iremos analisar o código via GitHub Applications
+5-Em Administration/General Settings/Languages escolher Java
+6-Configurar o token do Sonar no GitHub Actions
+    a:No Sonar Cloud ir em: Administration/Analysis Method/GitHub Actions/Follow the tutorial
+    b:Copiar o Name SONAR_TOKEN
+    c:Copiar o Value Field com o valor do Token
+    d:Ir para o GitHub
+    e:Abrir o projeto
+    f:Ir para: Settings/Secrets/Actions
+    g:New repository secret
+    h:Name --> SONAR_TOKEN
+    i:Value --> Colar o valor copiado do Value Field do Sonar Cloud
+    j:Add secret
+7-Voltar para o Sonar Cloud e clicar em Continue
+8-Clicar em Maven
+9-No Visual Studio Code, criar uma nova branch: feature/SonarCloud
+10-No arquivo pipeline.yml
     a:Incluir o cache do Sonar antes do cache do Maven
 
         - name: Cache SonarCloud packages
@@ -34,12 +39,12 @@
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=PhilipsMonster_seara-de-jesus
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=searadev_seara-backend
 
-9-No arquivo pom.xml incluir o Sonar:
+11-No arquivo pom.xml incluir o Sonar:
 
         <properties>
-            <sonar.organization>philipsmonster</sonar.organization>
+            <sonar.organization>searadev</sonar.organization>
             <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         </properties>
 
