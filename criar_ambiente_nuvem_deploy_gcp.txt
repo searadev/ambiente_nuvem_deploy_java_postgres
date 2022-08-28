@@ -110,3 +110,4 @@ Obs. Utilizaremos o Github Actions para subir o build no Registry do GCP, via Br
 11-Entre nela e copie a URL
 12-Cole a url no Postman e faça uma chamada para verificar se está tudo funcionando
 13-Seu serviço está deployado no GCP através do Cloud Run
+14-Após, acessar o Postgres via PGAdmin, se conectar na base e criar as tabelas utilizando o arquivo create_tables.sql
